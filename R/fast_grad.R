@@ -5,8 +5,8 @@
 # parallel C++ pass. Dispatch on signature("FLXPmultinom") shadows the
 # inherited FLXP method for multinomial concomitants only.
 
-stopifnot(requireNamespace("flexmix", quietly = TRUE))
-stopifnot(exists("cpp_multinom_scores"))
+#' @importFrom flexmix FLXgradlogLikfun
+#' @importClassesFrom flexmix FLXPmultinom
 
 setMethod(
   "FLXgradlogLikfun",
