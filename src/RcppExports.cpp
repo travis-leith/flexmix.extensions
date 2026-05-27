@@ -11,6 +11,20 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// cpp_multinom_scores
+List cpp_multinom_scores(const arma::mat& X, const arma::mat& fitted, const arma::mat& weights, int nthreads);
+RcppExport SEXP _flexmix_extensions_cpp_multinom_scores(SEXP XSEXP, SEXP fittedSEXP, SEXP weightsSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type fitted(fittedSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_multinom_scores(X, fitted, weights, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_multinom_fit_cpp
 List fast_multinom_fit_cpp(const arma::mat& X, const arma::mat& Y, const arma::vec& w, int max_iter, double tol, double ridge, int nthreads, Rcpp::Nullable<Rcpp::NumericMatrix> B_init, double eta_clip);
 RcppExport SEXP _flexmix_extensions_fast_multinom_fit_cpp(SEXP XSEXP, SEXP YSEXP, SEXP wSEXP, SEXP max_iterSEXP, SEXP tolSEXP, SEXP ridgeSEXP, SEXP nthreadsSEXP, SEXP B_initSEXP, SEXP eta_clipSEXP) {
@@ -32,6 +46,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_flexmix_extensions_cpp_multinom_scores", (DL_FUNC) &_flexmix_extensions_cpp_multinom_scores, 4},
     {"_flexmix_extensions_fast_multinom_fit_cpp", (DL_FUNC) &_flexmix_extensions_fast_multinom_fit_cpp, 9},
     {NULL, NULL, 0}
 };
