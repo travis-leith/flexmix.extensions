@@ -1,17 +1,18 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(openmp)]]
-// [[Rcpp::plugins(cpp14)]]
+// src/fast_grad.cpp
 //
-// Score matrices for the FLXPmultinom concomitant model, used inside
-// FLXgradlogLikfun on signature("FLXPmultinom").
+// Score matrices for the FLXPmultinom concomitant in flexmix's
+// FLXgradlogLikfun. Replaces this R loop (flexmix/R/refit.R):
 //
-// Reference (flexmix/R/refit.R, FLXP method):
 //   Pi <- lapply(seq_len(ncol(fitted))[-1],
 //                function(i) -fitted[, i] + weights[, i])
 //   lapply(Pi, function(p) apply(X, 2, "*", p))
 //
-// Returns list of (K-1) N x r matrices:
-//   out[[k]][i, j] = X[i, j] * (weights[i, k+1] - fitted[i, k+1])
+// Returns a list of (K-1) N x r matrices with
+//   out[[k]][, j] = X[, j] * (weights[, k+1] - fitted[, k+1]).
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::plugins(openmp)]]
+// [[Rcpp::plugins(cpp14)]]
 
 #include <RcppArmadillo.h>
 #ifdef _OPENMP
@@ -34,29 +35,26 @@ List cpp_multinom_scores(const arma::mat& X,
   if (fitted.n_rows != N)
     stop("cpp_multinom_scores: fitted rows must match X rows");
   if (K < 2) stop("cpp_multinom_scores: need at least 2 classes");
-  
+
 #ifdef _OPENMP
   if (nthreads > 0) omp_set_num_threads(nthreads);
 #endif
-  
-  // Allocate the K-1 output matrices up front; write directly into them.
-  std::vector<arma::mat> S(K - 1);
-  for (uword k = 0; k < K - 1; ++k) S[k].set_size(N, r);
-  
-  // Parallelise over rows; only kick in OpenMP for large N to avoid
-  // fork/join overhead dominating on tiny problems.
-#pragma omp parallel for schedule(static) if(N > 10000)
-  for (uword i = 0; i < N; ++i) {
-    for (uword k = 1; k < K; ++k) {
-      const double p = weights(i, k) - fitted(i, k);
-      arma::mat& M = S[k - 1];
-      for (uword j = 0; j < r; ++j) {
-        M(i, j) = X(i, j) * p;
-      }
-    }
+
+  const uword Km1 = K - 1;
+  std::vector<arma::mat> S(Km1);
+
+  // Parallelise over class index; the inner column-wise expression is
+  // already BLAS-friendly and avoids the row-major access pattern that
+  // fought Armadillo's column-major layout in the previous version.
+#pragma omp parallel for schedule(static) if(Km1 > 1 && N * r > 100000)
+  for (uword k = 1; k < K; ++k) {
+    const vec d = weights.col(k) - fitted.col(k);   // N x 1
+    mat& M = S[k - 1];
+    M.set_size(N, r);
+    for (uword j = 0; j < r; ++j) M.col(j) = X.col(j) % d;
   }
-  
-  List out(K - 1);
-  for (uword k = 0; k < K - 1; ++k) out[k] = wrap(S[k]);
+
+  List out(Km1);
+  for (uword k = 0; k < Km1; ++k) out[k] = wrap(std::move(S[k]));
   return out;
 }
