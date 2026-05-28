@@ -1,0 +1,54 @@
+---
+title: "FastFLXPmultinom benchmark"
+format:
+  gfm:
+    fig-width: 8
+    fig-height: 4
+    fig-dpi: 120
+execute:
+  echo: false
+  warning: false
+  message: false
+knitr:
+  opts_chunk:
+    dev: "png"
+---
+
+```{r setup}
+library(dplyr)
+library(ggplot2)
+
+payload <- readRDS("results/fast-multinom.rds")
+results <- payload$results
+```
+
+_Generated: `r format(payload$generated, tz = "UTC", usetz = TRUE)`_
+
+R `r payload$r_version`;
+flexmix `r payload$pkg_flexmix`;
+flexmix.extensions `r payload$pkg_extensions`.
+
+Times are medians over 3 iterations. `speedup = ref / fast`.
+
+## Results
+
+```{r table}
+results |>
+  mutate(
+    ref_s = signif(median_ref, 3),
+    fast_s = signif(median_fast, 3),
+    speedup = signif(speedup, 3)
+  ) |>
+  select(n, k, n_concomitant, ref_s, fast_s, speedup) |>
+  knitr::kable()
+```
+
+```{r plot}
+ggplot(results, aes(n, speedup, color = factor(k))) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~n_concomitant, labeller = label_both) +
+  scale_x_log10() +
+  labs(x = "n (obs)", y = "speedup (ref / fast)", color = "k") +
+  theme_minimal()
+```
