@@ -18,13 +18,19 @@ make_data <- function(n, n_concomitant, k) {
   beta <- matrix(rnorm(2 * k), 2, k)
   x1 <- rnorm(n)
   y <- beta[1, cls] + beta[2, cls] * x1 + rnorm(n)
-  tibble::as_tibble(cbind(data.frame(y = y, x1 = x1), Z))
+  cbind(tibble::tibble(y = y, x1 = x1), Z)
 }
 
 fit_one <- function(data, k, concomitant_fun, n_concomitant) {
   rhs <- paste(paste0("zp_", seq_len(n_concomitant)), collapse = " + ")
   conc <- concomitant_fun(as.formula(paste("~", rhs)))
-  flexmix(y ~ x1, data = data, k = k, concomitant = conc)
+  flexmix(
+    y ~ x1,
+    data = data,
+    k = k,
+    concomitant = conc,
+    control = list(minprior = 0)
+  )
 }
 
 default_grid <- function() {
@@ -35,7 +41,7 @@ default_grid <- function() {
   )
 }
 
-run_grid <- function(grid = default_grid(), iterations = 3L) {
+run_grid <- function(grid = default_grid(), iterations = 5L) {
   total <- nrow(grid)
   t_start <- Sys.time()
 
@@ -43,14 +49,12 @@ run_grid <- function(grid = default_grid(), iterations = 3L) {
     mutate(grid, .idx = row_number()),
     function(n, k, n_concomitant, .idx) {
       t0 <- Sys.time()
-      message(sprintf(
-        "[%2d/%d] n=%d  k=%d  n_concomitant=%d ...",
-        .idx,
-        total,
-        n,
-        k,
-        n_concomitant
-      ))
+
+      stringr::str_glue(
+        "[{.idx}/{total}] n={n}  k={k}  n_concomitant={n_concomitant} ..."
+      ) |>
+        message()
+
       data <- make_data(n, n_concomitant, k)
       b <- bench::mark(
         ref = fit_one(data, k, flexmix::FLXPmultinom, n_concomitant),
@@ -60,7 +64,8 @@ run_grid <- function(grid = default_grid(), iterations = 3L) {
         filter_gc = FALSE
       )
       dt <- as.numeric(Sys.time() - t0, units = "secs")
-      message(sprintf("         done in %.1fs", dt))
+      stringr::str_glue("         done in {round(dt, 1)}s") |> message()
+
       tibble(
         n = n,
         k = k,
@@ -71,10 +76,11 @@ run_grid <- function(grid = default_grid(), iterations = 3L) {
     }
   )
 
-  message(sprintf(
-    "Total elapsed: %.1fs",
-    as.numeric(Sys.time() - t_start, units = "secs")
-  ))
+  total_time <- as.numeric(Sys.time() - t_start, units = "secs")
+  stringr::str_glue(
+    "Total elapsed: {round(total_time, 1)}s"
+  ) |>
+    message()
 
   dplyr::bind_rows(rows) |>
     pivot_wider(
