@@ -1,9 +1,9 @@
 Package: flexmix.extensions
-Title: What the Package Does (One Line, Title Case)
+Title: Extensions for the flexmix package
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Travis", "Leith", , "travisgleith@gmail.com", role = c("aut", "cre"))
+Description: Extensions for the flexmix package, providing high-performance drivers.
 License: MIT + file LICENSE
 Suggests: 
     bench,
