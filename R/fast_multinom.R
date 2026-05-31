@@ -100,6 +100,47 @@ stopifnot(exists("fast_multinom_fit_cpp"))
 
 ## We define a coef.multinom shim only if nnet isn't loaded; otherwise rely on nnet's.
 ## (nnet::coef.multinom returns the same (K-1) x r matrix.)
+
+#' Fast multinomial concomitant model for flexmix
+#'
+#' Concomitant model driver that estimates component priors using a multinomial
+#' logit model. It serves as a high-performance drop-in replacement for
+#' [flexmix::FLXPmultinom()], leveraging a C++ Newton-Raphson solver for
+#' accelerated parameter estimation.
+#'
+#' Fits multinomial logit models for concomitant variables in mixture-of-experts
+#' models. Because it constructs a `multinom`-compatible S4 object, downstream
+#' methods like `summary()`, `vcov()`, and `refit(method = "optim")` continue
+#' work seamlessly.
+#'
+#' @param formula A one-sided formula of concomitant regressors.
+#'   Defaults to `~1`.
+#' @param max_iter Integer specifying the maximum number of Newton-Raphson
+#'   iterations. Defaults to `100L`.
+#' @param tol Numeric scalar defining convergence tolerance. Defaults to `1e-8`.
+#' @param ridge Numeric scalar defining a ridge regularization penalty added to the
+#'   Hessian diagonal to prevent numerical instability or separation issues.
+#'   Defaults to `1e-6`.
+#' @param nthreads Integer indicating the number of threads for parallel computation.
+#'   Defaults to `0L` (sequential execution).
+#'
+#' @return An object of class `FLXPmultinom` (subclass of `FLXP`) to be passed
+#'   as the `concomitant` argument to [flexmix::flexmix()].
+#'
+#' @examples
+#' set.seed(1)
+#' n <- 500
+#' z <- rnorm(n)
+#' y <- rnorm(n, mean = ifelse(z > 0, 2, -2))
+#' df <- data.frame(y = y, z = z)
+#' flexmix::flexmix(
+#'   y ~ 1,
+#'   data = df, k = 2,
+#'   concomitant = FastFLXPmultinom(~z)
+#' )
+#'
+#' @seealso [flexmix::FLXPmultinom()]
+#' @import flexmix
 #' @export
 FastFLXPmultinom <- function(
   formula = ~1,

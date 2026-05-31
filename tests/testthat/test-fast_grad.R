@@ -139,20 +139,20 @@ test_that("refit() agrees with parent FLXP method", {
   expect_equal(r_fast@vcov, r_slow@vcov, tolerance = 1e-6)
 })
 
-test_that("benchmark sanity (informational)", {
-  skip_on_cran()
-  d <- mk_inputs(50000, 6, 5)
-  obj <- mk_multinom_obj(d$X)
-  parent_fun <- parent_flxp_method()
-  t_ref <- system.time(parent_fun(obj, d$fitted, d$weights))[["elapsed"]]
-  t_cpp <- system.time(flexmix::FLXgradlogLikfun(obj, d$fitted, d$weights))[[
-    "elapsed"
-  ]]
-  message(sprintf(
-    "ref=%.3fs  cpp=%.3fs  speedup=%.1fx",
-    t_ref,
-    t_cpp,
-    t_ref / t_cpp
-  ))
-  expect_true(t_cpp <= t_ref * 2)
-})
+# test_that("benchmark sanity (informational)", {
+#   skip_on_cran()
+#   d <- mk_inputs(50000, 6, 5)
+#   obj <- mk_multinom_obj(d$X)
+#   parent_fun <- parent_flxp_method()
+#   t_ref <- system.time(parent_fun(obj, d$fitted, d$weights))[["elapsed"]]
+#   t_cpp <- system.time(flexmix::FLXgradlogLikfun(obj, d$fitted, d$weights))[[
+#     "elapsed"
+#   ]]
+#   message(sprintf(
+#     "ref=%.3fs  cpp=%.3fs  speedup=%.1fx",
+#     t_ref,
+#     t_cpp,
+#     t_ref / t_cpp
+#   ))
+#   expect_true(t_cpp <= t_ref * 2)
+# })

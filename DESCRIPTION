@@ -23,4 +23,5 @@ LinkingTo:
     RcppArmadillo
 Imports: 
     flexmix,
+    methods,
     Rcpp
